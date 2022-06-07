@@ -11,16 +11,30 @@ public class Cliente implements Runnable {
 
     private final SalaEspera fila;
     private final Lock lock;
-    private final Condition pode_dormir, corte_pronto;
+    private final Condition condition;
     private volatile boolean done;
 
-    public Cliente(SalaEspera fila, Lock lock, Condition pode_dormir, Condition corte_pronto) {
+    public Cliente(SalaEspera fila, Lock lock, Condition condition) {
         this.fila = fila;
         this.lock = lock;
-        this.pode_dormir = pode_dormir;
-        this.corte_pronto = corte_pronto;
+        this.condition = condition;
     }
 
+    public void entrarBarbearia() {
+        lock.lock();
+        try {
+            if (fila.isFull()) {
+                System.out.println("Fila cheia, cliente foi embora.");
+                done();
+            } else {
+                fila.put(this);
+                System.out.println(fila.getSize());
+                condition.signalAll();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
 
     public void done() {
         done = true;
@@ -30,7 +44,7 @@ public class Cliente implements Runnable {
     public void run() {
         done = false;
         while (!done) {
-            
+            entrarBarbearia();
         }
     }
 }
